@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PATHOGEN — Epidemic Simulation Platform</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="app">
+  <!-- HEADER -->
+  <header id="main-header">
+    <div class="logo">⬡ PATHOGEN</div>
+    <nav class="nav-tabs">
+      <button class="tab active" data-tab="designer">🧬 Virus Designer</button>
+      <button class="tab" data-tab="setup">⚙️ Simulation Setup</button>
+      <button class="tab" data-tab="world">🌍 World Map</button>
+      <button class="tab" data-tab="body">🫀 Body Viewer</button>
+      <button class="tab" data-tab="analytics">📊 Analytics</button>
+    </nav>
+    <div class="header-right">
+      <div class="global-ticker" id="global-ticker">
+        <span>S: <b id="t-s">—</b></span>
+        <span>E: <b id="t-e" class="warn">—</b></span>
+        <span>I: <b id="t-i" class="danger">—</b></span>
+        <span>R: <b id="t-r" class="success">—</b></span>
+        <span>D: <b id="t-d" class="muted">—</b></span>
+        <span>Day: <b id="t-day" class="accent">0</b></span>
+      </div>
+      <button id="run-btn" class="run-btn" onclick="App.run()">▶ RUN SIMULATION</button>
+      <button id="pause-btn" class="pause-btn hidden" onclick="App.togglePause()">⏸</button>
+      <button class="reset-btn" onclick="App.reset()">↺</button>
+    </div>
+  </header>
+
+  <!-- TAB PANELS -->
+
+  <!-- ═══════════════════ DESIGNER ═══════════════════ -->
+  <div id="tab-designer" class="tab-panel active">
+    <div class="designer-layout">
+      <div class="designer-params">
+
+        <!-- Presets -->
+        <div class="card">
+          <div class="card-title">⚡ Quick Presets</div>
+          <div class="presets-row">
+            <button class="preset-btn" onclick="App.loadPreset('flu')">🤧 Influenza</button>
+            <button class="preset-btn" onclick="App.loadPreset('covid')">🦠 COVID-19</button>
+            <button class="preset-btn" onclick="App.loadPreset('ebola')">🩸 Ebola</button>
+            <button class="preset-btn" onclick="App.loadPreset('measles')">💥 Measles</button>
+            <button class="preset-btn" onclick="App.loadPreset('plague')">☠️ Plague</button>
+            <button class="preset-btn preset-danger" onclick="App.loadPreset('nhev')">🧟 NHEV</button>
+          </div>
+        </div>
+
+        <!-- Identity -->
+        <div class="card">
+          <div class="card-title">🏷️ Identity</div>
+          <div class="form-row">
+            <label>Name</label>
+            <input type="text" id="v-name" value="Custom Pathogen" class="text-inp">
+          </div>
+          <div class="form-row">
+            <label>Pathogen Type</label>
+            <select id="v-pathtype" class="sel-inp">
+              <option value="rna">RNA Virus (fast mutation)</option>
+              <option value="dna">DNA Virus (stable)</option>
+              <option value="retrovirus">Retrovirus (integrates into host)</option>
+              <option value="bacteria">Bacteria</option>
+              <option value="prion">Prion (misfolded protein)</option>
+              <option value="fungal">Fungal</option>
+              <option value="parasite">Parasite</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label>Transmission Route</label>
+            <select id="v-route" class="sel-inp">
+              <option value="airborne">Airborne (respiratory droplets)</option>
+              <option value="aerosol">Aerosol (fine particles, long-range)</option>
+              <option value="contact">Direct contact / skin</option>
+              <option value="bite">Bite / wound</option>
+              <option value="fecaloral">Fecal-oral</option>
+              <option value="vector">Vector-borne (mosquito/tick)</option>
+              <option value="bloodborne">Bloodborne</option>
+              <option value="sexual">Sexual transmission</option>
+              <option value="dropletcontact">Droplet + contact</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label>Origin</label>
+            <select id="v-origin" class="sel-inp">
+              <option value="zoonotic">Zoonotic spillover (animal→human)</option>
+              <option value="lab">Laboratory (engineered)</option>
+              <option value="environmental">Environmental reservoir</option>
+              <option value="mutation">Mutation of existing pathogen</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Transmission -->
+        <div class="card">
+          <div class="card-title">📡 Transmission Parameters</div>
+          <div class="slider-group" id="sliders-transmission"></div>
+        </div>
+
+        <!-- Disease Timeline -->
+        <div class="card">
+          <div class="card-title">⏱️ Disease Timeline</div>
+          <div class="slider-group" id="sliders-timeline"></div>
+        </div>
+
+        <!-- Severity -->
+        <div class="card">
+          <div class="card-title">💀 Severity & Mortality</div>
+          <div class="slider-group" id="sliders-severity"></div>
+          <div class="age-ifr-grid">
+            <div class="age-ifr-title">IFR by Age Group (%)</div>
+            <div class="age-cols">
+              <div class="age-col"><div class="age-label">0-9</div><input type="number" class="age-inp" id="ifr-0" value="0.001" min="0" max="100" step="0.001"></div>
+              <div class="age-col"><div class="age-label">10-19</div><input type="number" class="age-inp" id="ifr-10" value="0.003" min="0" max="100" step="0.001"></div>
+              <div class="age-col"><div class="age-label">20-29</div><input type="number" class="age-inp" id="ifr-20" value="0.01" min="0" max="100" step="0.001"></div>
+              <div class="age-col"><div class="age-label">30-39</div><input type="number" class="age-inp" id="ifr-30" value="0.03" min="0" max="100" step="0.001"></div>
+              <div class="age-col"><div class="age-label">40-49</div><input type="number" class="age-inp" id="ifr-40" value="0.1" min="0" max="100" step="0.001"></div>
+              <div class="age-col"><div class="age-label">50-59</div><input type="number" class="age-inp" id="ifr-50" value="0.3" min="0" max="100" step="0.001"></div>
+              <div class="age-col"><div class="age-label">60-69</div><input type="number" class="age-inp" id="ifr-60" value="1.2" min="0" max="100" step="0.001"></div>
+              <div class="age-col"><div class="age-label">70-79</div><input type="number" class="age-inp" id="ifr-70" value="4.0" min="0" max="100" step="0.001"></div>
+              <div class="age-col"><div class="age-label">80+</div><input type="number" class="age-inp" id="ifr-80" value="10.0" min="0" max="100" step="0.001"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Immune evasion -->
+        <div class="card">
+          <div class="card-title">🛡️ Immune Evasion & Evolution</div>
+          <div class="slider-group" id="sliders-immune"></div>
+          <div class="form-row" style="margin-top:8px;">
+            <label>Neurotropic (targets CNS)</label>
+            <input type="checkbox" id="v-neuro" class="check-inp">
+          </div>
+          <div class="form-row">
+            <label>Immunosuppressive</label>
+            <input type="checkbox" id="v-immunosupp" class="check-inp">
+          </div>
+          <div class="form-row">
+            <label>Cytokine storm induction</label>
+            <input type="checkbox" id="v-cytokine" class="check-inp">
+          </div>
+          <div class="form-row">
+            <label>Antibiotic resistant</label>
+            <input type="checkbox" id="v-antibiotic" class="check-inp">
+          </div>
+          <div class="form-row">
+            <label>Latent / reactivation</label>
+            <input type="checkbox" id="v-latent" class="check-inp">
+          </div>
+        </div>
+
+        <!-- Body Systems -->
+        <div class="card">
+          <div class="card-title">🫁 Body Systems Targeted</div>
+          <div class="systems-checks" id="systems-checks"></div>
+        </div>
+
+        <!-- Symptoms -->
+        <div class="card">
+          <div class="card-title">🤒 Symptoms Produced</div>
+          <div class="symptoms-tags" id="symptoms-tags"></div>
+        </div>
+
+      </div>
+
+      <!-- Live Preview Panel -->
+      <div class="designer-preview">
+        <div class="preview-card">
+          <div class="preview-header">
+            <div class="virus-icon" id="v-icon">🦠</div>
+            <div>
+              <div class="preview-name" id="p-name">Custom Pathogen</div>
+              <div class="preview-sub" id="p-sub">RNA Virus · Airborne</div>
+            </div>
+          </div>
+
+          <div class="stat-2x2">
+            <div class="stat-box">
+              <div class="stat-lbl">R₀</div>
+              <div class="stat-val" id="p-r0">2.5</div>
+              <div class="stat-cls" id="p-r0-cls">Moderate</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-lbl">IFR</div>
+              <div class="stat-val danger" id="p-ifr">1.8%</div>
+              <div class="stat-cls" id="p-ifr-cls">Moderate</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-lbl">Doubling Time</div>
+              <div class="stat-val" id="p-dt">—</div>
+              <div class="stat-cls">Days (no intervention)</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-lbl">Serial Interval</div>
+              <div class="stat-val" id="p-si">—</div>
+              <div class="stat-cls">Days between cases</div>
+            </div>
+          </div>
+
+          <div class="threat-section">
+            <div class="threat-header">
+              <span>Pandemic Threat Index</span>
+              <span class="threat-num" id="p-threat">—</span>
+            </div>
+            <div class="threat-track">
+              <div class="threat-fill" id="p-threat-fill" style="width:0%"></div>
+            </div>
+            <div class="threat-label-row">
+              <span>Contained</span><span>Epidemic</span><span>Pandemic</span><span>Extinction</span>
+            </div>
+          </div>
+
+          <div class="compare-box" id="p-compare"></div>
+
+          <div class="proj-title">Projected Global Impact (no intervention)</div>
+          <div class="stat-2x2">
+            <div class="stat-box">
+              <div class="stat-lbl">Potential Infected</div>
+              <div class="stat-val warn" id="p-proj-inf">—</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-lbl">Potential Deaths</div>
+              <div class="stat-val danger" id="p-proj-dead">—</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-lbl">Days to 1M infected</div>
+              <div class="stat-val" id="p-proj-1m">—</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-lbl">Peak Hospitalizations</div>
+              <div class="stat-val" id="p-proj-hosp">—</div>
+            </div>
+          </div>
+
+          <div class="active-systems" id="p-systems"></div>
+          <div class="active-symptoms" id="p-symptoms"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ SETUP ═══════════════════ -->
+  <div id="tab-setup" class="tab-panel">
+    <div class="setup-layout">
+      <div class="setup-col">
+
+        <div class="card">
+          <div class="card-title">🌐 Global Population</div>
+          <div class="pop-big" id="pop-display">8,000,000,000</div>
+          <input type="range" id="pop-slider" min="1000" max="8000000000" step="500000" value="8000000000" oninput="App.updatePop()" class="big-slider">
+          <div class="slider-ends"><span>1,000</span><span>8 Billion</span></div>
+          <div class="quick-pops">
+            <button onclick="App.setPop(1000)">1K</button>
+            <button onclick="App.setPop(100000)">100K</button>
+            <button onclick="App.setPop(1000000)">1M</button>
+            <button onclick="App.setPop(10000000)">10M</button>
+            <button onclick="App.setPop(100000000)">100M</button>
+            <button onclick="App.setPop(1000000000)">1B</button>
+            <button onclick="App.setPop(4000000000)">4B</button>
+            <button onclick="App.setPop(8000000000)">8B</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">📍 Origin — Patient Zero City</div>
+          <input type="text" id="city-search" placeholder="Search city..." class="text-inp" oninput="App.filterCities()" style="margin-bottom:8px">
+          <div class="city-list" id="city-list"></div>
+          <div class="seed-display" id="seed-display">No city selected</div>
+          <div style="margin-top:10px;">
+            <div class="slider-row-inline">
+              <label>Initial infected count</label>
+              <span class="sval" id="seed-n-val">5</span>
+            </div>
+            <input type="range" id="seed-n" min="1" max="10000" value="5" oninput="App.updateSetupSlider('seedN')">
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">🧪 Initial Conditions</div>
+          <div class="slider-group" id="sliders-init"></div>
+        </div>
+
+      </div>
+      <div class="setup-col">
+
+        <div class="card">
+          <div class="card-title">🏛️ Government Response</div>
+          <div class="response-list" id="response-list"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">⏰ Intervention Timing</div>
+          <div class="slider-group" id="sliders-timing"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">💉 Vaccine & Treatment</div>
+          <div class="slider-group" id="sliders-vaccine"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">⏩ Simulation Settings</div>
+          <div class="slider-group" id="sliders-sim"></div>
+          <div class="speed-row">
+            <span>Playback:</span>
+            <button class="spd-btn active" id="spd-1" onclick="App.setSpeed(1)">1×</button>
+            <button class="spd-btn" id="spd-5" onclick="App.setSpeed(5)">5×</button>
+            <button class="spd-btn" id="spd-20" onclick="App.setSpeed(20)">20×</button>
+            <button class="spd-btn" id="spd-50" onclick="App.setSpeed(50)">50×</button>
+            <button class="spd-btn" id="spd-max" onclick="App.setSpeed(999)">MAX</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ WORLD MAP ═══════════════════ -->
+  <div id="tab-world" class="tab-panel">
+    <div class="world-layout">
+      <div class="world-main">
+        <div id="map-wrap">
+          <svg id="world-svg"></svg>
+          <div id="city-layer"></div>
+          <div id="map-overlay-info" class="map-overlay-info hidden"></div>
+        </div>
+        <div class="map-bar">
+          <button id="world-run-btn" class="run-btn small" onclick="App.run()">▶ RUN</button>
+          <button id="world-pause-btn" class="pause-btn small hidden" onclick="App.togglePause()">⏸</button>
+          <button class="reset-btn small" onclick="App.reset()">↺</button>
+          <div class="spd-inline">
+            <button onclick="App.setSpeed(1)">1×</button>
+            <button onclick="App.setSpeed(5)">5×</button>
+            <button onclick="App.setSpeed(20)">20×</button>
+            <button onclick="App.setSpeed(999)">MAX</button>
+          </div>
+          <div class="map-day-badge">DAY <span id="map-day">0</span></div>
+          <div class="map-legend">
+            <span><span class="ldot" style="background:#00e676"></span>Susceptible</span>
+            <span><span class="ldot" style="background:#ffea00"></span>Exposed</span>
+            <span><span class="ldot" style="background:#ff1744"></span>Infected</span>
+            <span><span class="ldot" style="background:#69f0ae"></span>Recovered</span>
+            <span><span class="ldot" style="background:#555"></span>Dead</span>
+          </div>
+          <div class="map-view-toggle">
+            <button onclick="App.setMapView('circles')" id="mv-circles" class="mv-btn active">Circles</button>
+            <button onclick="App.setMapView('heat')" id="mv-heat" class="mv-btn">Heat</button>
+          </div>
+        </div>
+      </div>
+      <div class="world-sidebar">
+        <div class="card" style="margin-bottom:8px">
+          <div class="card-title">📊 Global Stats</div>
+          <div id="world-stats-list"></div>
+        </div>
+        <div class="card" style="margin-bottom:8px">
+          <div class="card-title">🎛️ Live Response Override</div>
+          <select id="live-response" class="sel-inp" onchange="App.overrideResponse()">
+            <option value="">— No override —</option>
+            <option value="none">No response</option>
+            <option value="mild">Mild measures</option>
+            <option value="moderate">Moderate lockdown</option>
+            <option value="strict">Strict lockdown</option>
+            <option value="extreme">Total quarantine</option>
+          </select>
+        </div>
+        <div class="card" style="margin-bottom:8px">
+          <div class="card-title">📌 Watched Cities</div>
+          <div id="watched-list"></div>
+          <div class="hint">Click any city on the map to watch it</div>
+        </div>
+        <div class="card">
+          <div class="card-title">🔥 Top Outbreak Cities</div>
+          <div id="top-outbreak-list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ BODY ═══════════════════ -->
+  <div id="tab-body" class="tab-panel">
+    <div class="body-layout">
+      <div class="body-left">
+        <div class="card">
+          <div class="card-title">🧍 Infection Stage</div>
+          <div class="stage-btns" id="stage-btns"></div>
+          <div class="stage-desc" id="stage-desc"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">💓 Vital Signs</div>
+          <div id="vitals-list"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">🤢 Active Symptoms</div>
+          <div id="symptoms-list"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">📉 System Damage</div>
+          <div id="damage-list"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">🔬 Lab Values</div>
+          <div id="labs-list"></div>
+        </div>
+      </div>
+      <div class="body-center">
+        <svg id="body-svg" viewBox="0 0 280 580" xmlns="http://www.w3.org/2000/svg">
+          <!-- Body drawn by biology.js -->
+        </svg>
+        <div class="body-legend" id="body-legend"></div>
+      </div>
+      <div class="body-right">
+        <div class="card">
+          <div class="card-title">🦠 Viral Load Over Time</div>
+          <canvas id="viral-canvas" width="260" height="140"></canvas>
+        </div>
+        <div class="card">
+          <div class="card-title">🛡️ Immune Response</div>
+          <canvas id="immune-canvas" width="260" height="140"></canvas>
+        </div>
+        <div class="card">
+          <div class="card-title">📋 System Status</div>
+          <div id="system-status-list"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">⚗️ Pathogen Activity</div>
+          <div id="pathogen-activity"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">💊 Treatment Options</div>
+          <div id="treatment-options"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ ANALYTICS ═══════════════════ -->
+  <div id="tab-analytics" class="tab-panel">
+    <div class="analytics-grid">
+      <div class="chart-card span2">
+        <div class="chart-title">Global Epidemic Curve (SEIRD)</div>
+        <canvas id="chart-epidemic" height="220"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Effective Reproduction Number R(t)</div>
+        <canvas id="chart-rt" height="180"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Daily New Cases & Deaths</div>
+        <canvas id="chart-daily" height="180"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Healthcare System Load</div>
+        <canvas id="chart-health" height="180"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Geographic Spread (Cities infected by day)</div>
+        <canvas id="chart-spread" height="180"></canvas>
+      </div>
+      <div class="chart-card span2">
+        <div class="chart-title">Watched City Comparison — Active Infected</div>
+        <canvas id="chart-cities" height="200"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Age Group Mortality Distribution</div>
+        <canvas id="chart-age" height="180"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Intervention Impact</div>
+        <canvas id="chart-intervention" height="180"></canvas>
+      </div>
+    </div>
+    <div class="summary-card" id="summary-card">
+      <div class="card-title">📋 Simulation Summary</div>
+      <div id="summary-body">Run a simulation to see results.</div>
+    </div>
+  </div>
+</div>
+
+<div id="tooltip" class="tooltip hidden"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="js/data.js"></script>
+<script src="js/simulation.js"></script>
+<script src="js/worldmap.js"></script>
+<script src="js/biology.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
